@@ -1,0 +1,91 @@
+{
+  "schemaVersion": "1.0.0",
+  "entities": {
+    "users": {
+      "collection": "users",
+      "fields": {
+        "uid": { "type": "string", "required": true },
+        "email": { "type": "string", "required": false },
+        "displayName": { "type": "string", "required": false },
+        "photoURL": { "type": "string", "required": false },
+        "role": { "type": "string", "required": true },
+        "phone": { "type": "string", "required": false },
+        "createdAt": { "type": "string", "required": true }
+      }
+    },
+    "providers": {
+      "collection": "providers",
+      "fields": {
+        "id": { "type": "string", "required": true },
+        "userId": { "type": "string", "required": false },
+        "businessName": { "type": "string", "required": true },
+        "category": { "type": "string", "required": true },
+        "phone": { "type": "string", "required": true },
+        "address": { "type": "string", "required": true },
+        "quartier": { "type": "string", "required": false },
+        "basePrice": { "type": "number", "required": true },
+        "status": { "type": "string", "required": true },
+        "isOnline": { "type": "boolean", "required": true },
+        "avatar": { "type": "string", "required": false },
+        "carteVisite": { "type": "string", "required": false },
+        "portfolio": { "type": "array", "required": false },
+        "rating": { "type": "number", "required": true },
+        "reviewCount": { "type": "number", "required": true },
+        "workHours": { "type": "string", "required": false },
+        "bio": { "type": "string", "required": false },
+        "createdAt": { "type": "string", "required": true }
+      }
+    },
+    "directory": {
+      "collection": "directory",
+      "fields": {
+        "id": { "type": "string", "required": true },
+        "name": { "type": "string", "required": true },
+        "nameFr": { "type": "string", "required": false },
+        "category": { "type": "string", "required": true },
+        "phone": { "type": "string", "required": true },
+        "address": { "type": "string", "required": true },
+        "iconEmoji": { "type": "string", "required": true },
+        "specialty": { "type": "string", "required": false },
+        "specialtyFr": { "type": "string", "required": false },
+        "doctorName": { "type": "string", "required": false },
+        "workHours": { "type": "string", "required": false },
+        "notes": { "type": "string", "required": false },
+        "homeSampling": { "type": "boolean", "required": false },
+        "labTests": { "type": "array", "required": false },
+        "createdAt": { "type": "string", "required": false }
+      }
+    },
+    "serviceRequests": {
+      "collection": "serviceRequests",
+      "fields": {
+        "id": { "type": "string", "required": true },
+        "clientId": { "type": "string", "required": true },
+        "clientName": { "type": "string", "required": true },
+        "clientPhone": { "type": "string", "required": true },
+        "clientLocation": { "type": "string", "required": true },
+        "providerId": { "type": "string", "required": true },
+        "providerName": { "type": "string", "required": true },
+        "category": { "type": "string", "required": true },
+        "status": { "type": "string", "required": true },
+        "description": { "type": "string", "required": false },
+        "rating": { "type": "number", "required": false },
+        "reviewText": { "type": "string", "required": false },
+        "createdAt": { "type": "string", "required": true }
+      }
+    },
+    "complaints": {
+      "collection": "complaints",
+      "fields": {
+        "id": { "type": "string", "required": true },
+        "name": { "type": "string", "required": true },
+        "phone": { "type": "string", "required": true },
+        "category": { "type": "string", "required": true },
+        "address": { "type": "string", "required": true },
+        "description": { "type": "string", "required": true },
+        "status": { "type": "string", "required": true },
+        "createdAt": { "type": "string", "required": true }
+      }
+    }
+  }
+}

@@ -1,0 +1,17 @@
+FROM alpine:3.21
+
+ARG POCKETBASE_VERSION=0.39.11
+ARG TARGETARCH
+RUN apk add --no-cache ca-certificates unzip wget \
+  && case "${TARGETARCH}" in amd64) PB_ARCH=amd64 ;; arm64) PB_ARCH=arm64 ;; *) echo "Unsupported architecture: ${TARGETARCH}"; exit 1 ;; esac \
+  && wget -q "https://github.com/pocketbase/pocketbase/releases/download/v${POCKETBASE_VERSION}/pocketbase_${POCKETBASE_VERSION}_linux_${PB_ARCH}.zip" -O /tmp/pocketbase.zip \
+  && unzip /tmp/pocketbase.zip -d /pb \
+  && rm /tmp/pocketbase.zip \
+  && adduser -D -H pocketbase \
+  && chown -R pocketbase:pocketbase /pb
+
+WORKDIR /pb
+COPY --chown=pocketbase:pocketbase pb_migrations ./pb_migrations
+USER pocketbase
+EXPOSE 8090
+CMD ["./pocketbase", "serve", "--http=0.0.0.0:8090", "--dir=/pb/pb_data"]

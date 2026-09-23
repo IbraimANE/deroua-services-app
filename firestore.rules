@@ -1,0 +1,116 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Admin role is provisioned only by a trusted operator. Users cannot create
+    // an admin profile or change their own role through these rules.
+    function isAdmin() {
+      return hasRole('admin');
+    }
+
+    function hasRole(role) {
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == role;
+    }
+
+    function ownsProvider(providerId) {
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/providers/$(providerId)) &&
+        get(/databases/$(database)/documents/providers/$(providerId)).data.userId == request.auth.uid;
+    }
+
+    function ownsFacility(facilityId) {
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/directory/$(facilityId)) &&
+        get(/databases/$(database)/documents/directory/$(facilityId)).data.ownerId == request.auth.uid;
+    }
+
+    match /users/{userId} {
+      allow read: if isAdmin() || (isAuthenticated() && request.auth.uid == userId);
+      allow create: if isAuthenticated() && request.auth.uid == userId &&
+        request.resource.data.uid == userId &&
+        request.resource.data.role in ['client', 'provider', 'company'];
+      allow update: if isAdmin() || (
+        isAuthenticated() && request.auth.uid == userId &&
+        request.resource.data.uid == resource.data.uid &&
+        request.resource.data.role == resource.data.role &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'displayName', 'phone', 'photoURL', 'updatedAt'
+        ])
+      );
+      allow delete: if isAdmin();
+    }
+
+    match /providers/{providerId} {
+      allow read: if resource.data.status in ['active', 'verified'] || isAdmin() ||
+        (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow create: if hasRole('provider') &&
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.rating == 0 && request.resource.data.reviewCount == 0 &&
+        request.resource.data.status == 'pending';
+      allow update: if isAdmin() || (
+        ownsProvider(providerId) &&
+        request.resource.data.userId == resource.data.userId &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'businessName', 'phone', 'address', 'quartier', 'latitude',
+          'longitude', 'basePrice', 'isOnline', 'avatar', 'carteVisite',
+          'portfolio', 'workHours', 'bio'
+        ])
+      );
+      allow delete: if isAdmin();
+    }
+
+    match /directory/{itemId} {
+      allow read: if true;
+      allow create: if isAdmin() || (hasRole('company') &&
+        request.resource.data.ownerId == request.auth.uid &&
+        request.resource.data.category in ['clinic', 'lab', 'center']);
+      allow update: if isAdmin() || (
+        ownsFacility(itemId) &&
+        request.resource.data.ownerId == resource.data.ownerId &&
+        request.resource.data.category == resource.data.category
+      );
+      allow delete: if isAdmin();
+    }
+
+    match /serviceRequests/{requestId} {
+      allow read: if isAdmin() || (
+        isAuthenticated() && (
+          resource.data.clientId == request.auth.uid ||
+          ownsProvider(resource.data.providerId)
+        )
+      );
+      allow create: if hasRole('client') &&
+        request.resource.data.clientId == request.auth.uid &&
+        get(/databases/$(database)/documents/providers/$(request.resource.data.providerId)).data.status in ['active', 'verified'] &&
+        !request.resource.data.keys().hasAny(['rating', 'reviewText']) &&
+        request.resource.data.status == 'Pending';
+      allow update: if isAdmin() || (
+        isAuthenticated() && resource.data.clientId == request.auth.uid &&
+        resource.data.status == 'completed' && !resource.data.keys().hasAny(['rating']) &&
+        request.resource.data.rating is int && request.resource.data.rating >= 1 && request.resource.data.rating <= 5 &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rating', 'reviewText'])
+      ) || (
+        ownsProvider(resource.data.providerId) &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']) &&
+        ((resource.data.status == 'Pending' && request.resource.data.status in ['accepted', 'rejected']) ||
+          (resource.data.status == 'accepted' && request.resource.data.status == 'completed'))
+      );
+      allow delete: if isAdmin();
+    }
+
+    match /complaints/{complaintId} {
+      allow create: if true;
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /advertisements/{adId} {
+      allow read: if resource.data.isActive == true || isAdmin();
+      allow create, update, delete: if isAdmin();
+    }
+  }
+}
